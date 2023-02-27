@@ -3,6 +3,7 @@ let synth;
 let chorusSynth;
 let sineSynth;
 let sawSynth;
+let bassSynth;
 
 function setup() {
   // mimics the autoplay policy
@@ -50,11 +51,74 @@ function setup() {
   sawSynth = new Tone.PolySynth(Tone.Synth, options2).connect(filter);
   sawSynth.maxPolyphony = 100;
   // synth = new Tone.Synth(options2).connect(filter);
-  synth = new Tone.PolySynth(Tone.Synth).connect(filter);
+  const pianoOptions = {
+    // volume: -8,
+    oscillator: {
+      partials: [1, 2, 1],
+    },
+    portamento: 0.05,
+  };
+  synth = new Tone.PolySynth(Tone.Synth, pianoOptions).connect(filter);
   synth.maxPolyphony = 100;
   // polySynth = new p5.PolySynth(p5.MonoSynth, 50);
   chorusSynth = new Tone.PolySynth(Tone.Synth).connect(chorusFilter);
   chorusSynth.maxPolyphony = 100;
+
+  // const bassOptions = {
+  //   oscillator: {
+  //     type: "fmsawtooth",
+  //     modulationType: "triangle",
+  //   },
+  // };
+  const bassOptions = {
+    envelope: {
+      sustain: 0,
+      attack: 0.02,
+      decay: 0.8,
+    },
+    octaves: 10,
+  };
+  const bassOptions2 = {
+    // volume: -10,
+    envelope: {
+      attack: 0.1,
+      decay: 0.3,
+      release: 2,
+    },
+    filterEnvelope: {
+      attack: 0.001,
+      decay: 0.01,
+      sustain: 0.5,
+      baseFrequency: 200,
+      octaves: 2.6,
+    },
+  };
+  const bassOptions3 = {
+    vibratoAmount: 0.1,
+    harmonicity: 1.5,
+    voice0: {
+      oscillator: {
+        type: "triangle",
+      },
+      envelope: {
+        attack: 0.05,
+      },
+    },
+    voice1: {
+      oscillator: {
+        type: "triangle",
+      },
+      envelope: {
+        attack: 0.05,
+      },
+    },
+  };
+  const bass = new Tone.Gain(0.8).connect(vol);
+  let distortion = new Tone.Distortion(0.8).connect(bass);
+  distortion.wet = 0.2;
+  //DuoSynth, single chord
+  bassSynth = new Tone.PolySynth(Tone.Synth, bassOptions2).connect(vol);
+  bassSynth.maxPolyphony = 8;
 
   createCanvas(800, 300);
   frameRate(60);
@@ -64,7 +128,17 @@ function setup() {
 }
 
 class Board {
-  constructor(x, y, size, tones, lifecycle, boardsize, octaveOffset, onComplete, synth) {
+  constructor(
+    x,
+    y,
+    size,
+    tones,
+    lifecycle,
+    boardsize,
+    octaveOffset,
+    onComplete,
+    synth
+  ) {
     this.x = x;
     this.y = y;
     this.size = size;
@@ -86,6 +160,7 @@ class Board {
       this.board.push([]);
       for (let j = 0; j < this.boardsize; j++) {
         let state = Math.round(Math.random() % 1);
+        // state = 0;
         let tone = this.tones[j % this.tones.length];
         let octave = Math.floor(j / this.tones.length);
         console.log(octave);
@@ -141,7 +216,11 @@ class Board {
 
   draw() {
     fill(128, 128, 0);
-    rect(this.x + (this.currentIndex - 1) * this.size, this.size * this.board.length, this.size);
+    rect(
+      this.x + (this.currentIndex - 1) * this.size,
+      this.size * this.board.length,
+      this.size
+    );
 
     for (let field of this.fields) {
       field.draw();
@@ -149,21 +228,6 @@ class Board {
   }
 
   update() {
-    if (this.count === 0) {
-      for (let i = 0; i < this.board.length; i++) {
-        for (let j = 0; j < this.board[i].length; j++) {
-          // this.board[i][j].draw();
-          this.calculateNewState(i, j);
-        }
-      }
-      this.calculateLiving();
-
-      for (let i = 0; i < this.board.length; i++) {
-        for (let j = 0; j < this.board[i].length; j++) {
-          this.board[i][j].state = this.board[i][j].newState;
-        }
-      }
-    }
     if (this.count === this.lifecycle * this.currentIndex) {
       for (let j = 0; j < this.board[this.currentIndex].length; j++) {
         if (this.board[this.currentIndex][j].state === 1) {
@@ -178,6 +242,21 @@ class Board {
       this.currentIndex = 0;
       if (this.onComplete) {
         this.onComplete();
+      }
+    }
+    if (this.count === 0) {
+      for (let i = 0; i < this.board.length; i++) {
+        for (let j = 0; j < this.board[i].length; j++) {
+          // this.board[i][j].draw();
+          this.calculateNewState(i, j);
+        }
+      }
+      this.calculateLiving();
+
+      for (let i = 0; i < this.board.length; i++) {
+        for (let j = 0; j < this.board[i].length; j++) {
+          this.board[i][j].state = this.board[i][j].newState;
+        }
       }
     }
   }
@@ -218,12 +297,22 @@ class Field {
 
   click() {
     if (this.hitTest(mouseX, mouseY)) {
-      this.play();
+      // this.play();
+      if (this.state === 0) {
+        this.state = 1;
+      } else {
+        this.state = 0;
+      }
     }
   }
 
   hitTest(x, y) {
-    return x > this.x && x < this.x + this.size && y > this.y && y < this.y + this.size;
+    return (
+      x > this.x &&
+      x < this.x + this.size &&
+      y > this.y &&
+      y < this.y + this.size
+    );
   }
 }
 
@@ -278,7 +367,7 @@ function setupBoards() {
         }
       }
     },
-    synth
+    bassSynth
   );
   boards.push(board1);
 
@@ -293,9 +382,12 @@ function setupBoards() {
 }
 
 let isRunning = false;
+let isToneStarted = false;
 
 function draw() {
   background(0, 0, 0);
+
+  rect(0, 220, 100, 80);
 
   for (let board of boards) {
     board.draw();
@@ -309,6 +401,28 @@ function draw() {
 }
 
 function mouseClicked() {
-  isRunning = true;
-  Tone.start();
+  if (mouseX > 0 && mouseX < 100 && mouseY > 220 && mouseY < 300) {
+    isRunning = true;
+  }
+  if (!isToneStarted) {
+    Tone.start();
+    isToneStarted = true;
+  }
+  // if (!isRunning) {
+  boards.forEach((board) => {
+    board.fields.forEach((field) => {
+      field.click();
+    });
+  });
+  // }
 }
+
+// function mouseDragged() {
+//   if (!isRunning) {
+//     boards.forEach((board) => {
+//       board.fields.forEach((field) => {
+//         field.click();
+//       });
+//     });
+//   }
+// }
