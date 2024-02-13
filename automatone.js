@@ -118,9 +118,9 @@ function setup() {
   distortion.wet = 0.2;
   //DuoSynth, single chord
   bassSynth = new Tone.PolySynth(Tone.Synth, bassOptions2).connect(vol);
-  bassSynth.maxPolyphony = 8;
+  bassSynth.maxPolyphony = 16;
 
-  createCanvas(800, 300);
+  createCanvas(1000, 800);
   frameRate(60);
   background(0, 0, 0);
 
@@ -141,6 +141,7 @@ class Board {
   ) {
     this.x = x;
     this.y = y;
+    this.offset = 20;
     this.size = size;
     this.tones = tones;
     this.fields = [];
@@ -152,6 +153,7 @@ class Board {
     this.currentIndex = 0;
     this.onComplete = onComplete;
     this.synth = synth;
+    this.pixelBoardSize = this.size * this.boardsize + this.offset * 2;
     this.createBoard();
   }
 
@@ -165,9 +167,10 @@ class Board {
         let octave = Math.floor(j / this.tones.length);
         console.log(octave);
         const field = new Field(
-          this.x + i * this.size,
+          i * this.size,
           j * this.size,
           this.size,
+          this,
           tone + (octave + this.octaveOffset),
           state,
           this.lifecycle / 60,
@@ -215,9 +218,24 @@ class Board {
   }
 
   draw() {
-    fill(128, 128, 0);
+    push();
+    translate(this.x, this.y);
+    noStroke();
+    fill("#33135c");
+    rect(0, 0, this.pixelBoardSize, this.pixelBoardSize);
+
+    fill("#fffb96");
+    for (let j = 0; j < this.boardsize; j++) {
+      let tone = this.tones[j % this.tones.length];
+      let octave = Math.floor(j / this.tones.length);
+      let val = tone + (octave + this.octaveOffset);
+      text(val, 0, (j + 1) * this.size, this.size, this.size);
+    }
+
+    translate(this.offset, this.offset);
+    fill("#08f7fe");
     rect(
-      this.x + (this.currentIndex - 1) * this.size,
+      (this.currentIndex - 1) * this.size,
       this.size * this.board.length,
       this.size
     );
@@ -225,6 +243,7 @@ class Board {
     for (let field of this.fields) {
       field.draw();
     }
+    pop();
   }
 
   update() {
@@ -260,30 +279,39 @@ class Board {
       }
     }
   }
+
+  hitTest(x, y) {
+    return (
+      x > this.x &&
+      x < this.x + this.pixelBoardSize &&
+      y > this.y &&
+      y < this.y + this.pixelBoardSize
+    );
+  }
 }
 
 class Field {
-  constructor(x, y, size, note, state, toneLength, synth) {
+  constructor(x, y, size, board, note, state, toneLength, synth) {
     this.x = x;
     this.y = y;
+    this.parent = board;
     this.size = size;
     this.note = note;
     this.state = state;
     this.newState = -1;
     this.toneLength = toneLength;
     this.synth = synth;
+    this.wasChanged = false;
   }
 
   draw() {
-    push();
-    translate(this.x, this.y);
     if (this.state === 0) {
-      fill(255, 255, 255);
-    } else {
-      fill(0, 0, 0);
+      push();
+      translate(this.x, this.y);
+      fill("#ff2079");
+      rect(0, 0, this.size, this.size);
+      pop();
     }
-    rect(0, 0, this.size, this.size);
-    pop();
   }
 
   play() {
@@ -296,23 +324,25 @@ class Field {
   }
 
   click() {
-    if (this.hitTest(mouseX, mouseY)) {
+    let hit = this.hitTest(mouseX, mouseY);
+    if (!this.wasChanged && hit) {
+      this.wasChanged = true;
       // this.play();
       if (this.state === 0) {
         this.state = 1;
       } else {
         this.state = 0;
       }
+    } else if (this.wasChanged && !hit) {
+      this.wasChanged = false;
     }
+    return hit;
   }
 
   hitTest(x, y) {
-    return (
-      x > this.x &&
-      x < this.x + this.size &&
-      y > this.y &&
-      y < this.y + this.size
-    );
+    let posX = this.x + this.parent.x + this.parent.offset;
+    let posY = this.y + this.parent.y + this.parent.offset;
+    return x > posX && x < posX + this.size && y > posY && y < posY + this.size;
   }
 }
 
@@ -385,7 +415,8 @@ let isRunning = false;
 let isToneStarted = false;
 
 function draw() {
-  background(0, 0, 0);
+  // background(0, 0, 0);
+  background("#1a1c2c");
 
   rect(0, 220, 100, 80);
 
@@ -399,6 +430,14 @@ function draw() {
     }
   }
 }
+
+/*
+Neon Pink: #ff2079
+Neon Blue: #08f7fe
+Neon Green: #07f49e
+Bright Yellow: #fffb96
+Dark Purple: #33135c
+*/
 
 function mouseClicked() {
   if (mouseX > 0 && mouseX < 100 && mouseY > 220 && mouseY < 300) {
@@ -415,6 +454,28 @@ function mouseClicked() {
     });
   });
   // }
+}
+
+function mouseDragged() {
+  let fieldHit = false;
+  boards.forEach((board) => {
+    board.fields.forEach((field) => {
+      let hit = field.click();
+      if (hit) {
+        fieldHit = hit;
+      }
+    });
+  });
+
+  if (!fieldHit) {
+    boards.forEach((board) => {
+      if (board.hitTest(mouseX, mouseY)) {
+        board.x += movedX;
+        board.y += movedY;
+      }
+    });
+  }
+  return false;
 }
 
 // function mouseDragged() {

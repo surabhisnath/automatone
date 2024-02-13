@@ -1,0 +1,31 @@
+* {
+  margin: 0px auto;
+}
+
+body {
+  background-color: #000000;
+  height: 100vh;
+  margin: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button {
+  position: fixed;
+  background-color: #07f49e;
+  width: 3em;
+  height: 3em;
+  clip-path: circle();
+  text-align: center;
+}
+
+.play {
+  left: 2em;
+  bottom: 2em;
+}
+
+.add {
+  right: 2em;
+  bottom: 2em;
+}
