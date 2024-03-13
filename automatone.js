@@ -120,12 +120,17 @@ function setup() {
   bassSynth = new Tone.PolySynth(Tone.Synth, bassOptions2).connect(vol);
   bassSynth.maxPolyphony = 16;
 
-  createCanvas(1000, 800);
+  createCanvas(innerWidth, innerHeight);
   frameRate(60);
   background(0, 0, 0);
 
   setupBoards();
 }
+
+window.addEventListener("resize", () => {
+  resizeCanvas(innerWidth, innerHeight);
+  centerBoards();
+});
 
 class Board {
   constructor(
@@ -137,14 +142,15 @@ class Board {
     boardsize,
     octaveOffset,
     onComplete,
-    synth
+    synth,
+    name
   ) {
     this.x = x;
     this.y = y;
     this.offset = 20;
     this.size = size;
     this.tones = tones;
-    this.fields = [];
+    this.cells = [];
     this.board = [];
     this.lifecycle = lifecycle;
     this.count = 0;
@@ -153,6 +159,7 @@ class Board {
     this.currentIndex = 0;
     this.onComplete = onComplete;
     this.synth = synth;
+    this.name = name;
     this.pixelBoardSize = this.size * this.boardsize + this.offset * 2;
     this.createBoard();
   }
@@ -165,8 +172,8 @@ class Board {
         // state = 0;
         let tone = this.tones[j % this.tones.length];
         let octave = Math.floor(j / this.tones.length);
-        console.log(octave);
-        const field = new Field(
+        // console.log(octave);
+        const cell = new Cell(
           i * this.size,
           j * this.size,
           this.size,
@@ -176,8 +183,8 @@ class Board {
           this.lifecycle / 60,
           this.synth
         );
-        this.board[i].push(field);
-        this.fields.push(field);
+        this.board[i].push(cell);
+        this.cells.push(cell);
       }
     }
   }
@@ -188,7 +195,6 @@ class Board {
     let startY = Math.max(0, y - 1);
     let endX = Math.min(this.board.length, x + 2);
     let endY = Math.min(this.board[x].length, y + 2);
-    // console.log(startX + " " + startY + " " + endX + " " + endY);
     let values = [];
     for (let i = startX; i < endX; i++) {
       let cells = this.board[i].slice(startY, endY);
@@ -225,11 +231,12 @@ class Board {
     rect(0, 0, this.pixelBoardSize, this.pixelBoardSize);
 
     fill("#fffb96");
+    text(this.name, 0, 0, this.pixelBoardSize, this.size * 2);
     for (let j = 0; j < this.boardsize; j++) {
       let tone = this.tones[j % this.tones.length];
       let octave = Math.floor(j / this.tones.length);
       let val = tone + (octave + this.octaveOffset);
-      text(val, 0, (j + 1) * this.size, this.size, this.size);
+      text(val, 0, (j + 1) * this.size, this.size * 2, this.size * 2);
     }
 
     translate(this.offset, this.offset);
@@ -240,8 +247,8 @@ class Board {
       this.size
     );
 
-    for (let field of this.fields) {
-      field.draw();
+    for (let cell of this.cells) {
+      cell.draw();
     }
     pop();
   }
@@ -266,7 +273,6 @@ class Board {
     if (this.count === 0) {
       for (let i = 0; i < this.board.length; i++) {
         for (let j = 0; j < this.board[i].length; j++) {
-          // this.board[i][j].draw();
           this.calculateNewState(i, j);
         }
       }
@@ -290,7 +296,7 @@ class Board {
   }
 }
 
-class Field {
+class Cell {
   constructor(x, y, size, board, note, state, toneLength, synth) {
     this.x = x;
     this.y = y;
@@ -308,19 +314,22 @@ class Field {
     if (this.state === 0) {
       push();
       translate(this.x, this.y);
+      stroke("#08f7fe");
       fill("#ff2079");
+      rect(0, 0, this.size, this.size);
+      pop();
+    } else {
+      push();
+      translate(this.x, this.y);
+      stroke("#08f7fe");
+      fill("#33135c");
       rect(0, 0, this.size, this.size);
       pop();
     }
   }
 
   play() {
-    // polySynth.play(this.note, 0.5, 0, 0.5);
-    // polySynth.play(this.note, 0.5, 0);
     this.synth.triggerAttackRelease(this.note, this.toneLength);
-    // sineSynth.triggerAttackRelease(this.note, this.toneLength);
-    // sawSynth.triggerAttackRelease(this.note, this.toneLength);
-    // synth.triggerAttackRelease(this.note, 1 + Math.floor(Math.random() * 4) + "n");
   }
 
   click() {
@@ -346,6 +355,44 @@ class Field {
   }
 }
 
+class Button {
+  constructor(x, y, title, onClick) {
+    this.x = x;
+    this.y = y;
+    this.width = 120;
+    this.height = 40;
+    this.title = title;
+    this.onClick = onClick;
+  }
+
+  draw() {
+    push();
+    translate(this.x, this.y);
+    textAlign(CENTER);
+    textSize(18);
+    fill("#33135c");
+    rect(0, 0, this.width, this.height);
+    fill("#fffb96");
+    text(this.title, 0, this.height / 4, this.width, this.height);
+    pop();
+  }
+
+  click() {
+    if (this.hitTest(mouseX, mouseY)) {
+      this.onClick();
+    }
+  }
+
+  hitTest(x, y) {
+    return (
+      x > this.x &&
+      x < this.x + this.width &&
+      y > this.y &&
+      y < this.y + this.height
+    );
+  }
+}
+
 // C D E G A
 
 // let toneX = ["C", "D", "E", "G", "A"];
@@ -358,6 +405,14 @@ let tone = ["B#", "D", "F", "G", "A"];
 const size = 20;
 
 let boards = [];
+const startButton = new Button(0, 0, "Start", () => {
+  isRunning = !isRunning;
+  if (isRunning) {
+    startButton.title = "Stop";
+  } else {
+    startButton.title = "Start";
+  }
+});
 
 // Draw intial start field
 // Change volume per board
@@ -366,9 +421,19 @@ let boards = [];
 // Static forms reset
 // Different aspect ratio for boards
 
+function centerBoards() {
+  const boardSize = size * 10;
+  const numBoards = boards.length;
+  for (let index in boards) {
+    let board = boards[index];
+    board.x =
+      (width - boardSize * numBoards - size * (numBoards - 1)) / 2 +
+      index * (boardSize + size);
+    board.y = (height - boardSize) / 2;
+  }
+}
+
 function setupBoards() {
-  console.log(synth);
-  //toneX
   let board1 = new Board(
     0,
     0,
@@ -378,6 +443,7 @@ function setupBoards() {
     8,
     3,
     () => {
+      return;
       // boards.forEach((board) => {
       //   board.tones = toneY;
       //   for (let i = 0; i < board.board.length; i++) {
@@ -397,28 +463,32 @@ function setupBoards() {
         }
       }
     },
-    bassSynth
+    bassSynth,
+    "Board 1"
   );
   boards.push(board1);
 
-  let board2 = new Board(200, 0, size, toneX, 30, 8, 5, null, synth);
+  let board2 = new Board(200, 0, size, toneX, 30, 8, 5, null, synth, "Board 2");
   boards.push(board2);
 
-  let board3 = new Board(400, 0, size, toneX, 15, 8, 6, null, synth);
+  let board3 = new Board(400, 0, size, toneX, 15, 8, 6, null, synth, "Board 3");
   boards.push(board3);
 
-  let board4 = new Board(600, 0, size, toneX, 5, 8, 7, null, synth);
+  let board4 = new Board(600, 0, size, toneX, 5, 8, 7, null, synth, "Board 4");
   boards.push(board4);
+
+  centerBoards();
 }
 
 let isRunning = false;
 let isToneStarted = false;
 
 function draw() {
-  // background(0, 0, 0);
   background("#1a1c2c");
 
-  rect(0, 220, 100, 80);
+  startButton.x = (width - startButton.width) / 2;
+  startButton.y = height - startButton.height - 20;
+  startButton.draw();
 
   for (let board of boards) {
     board.draw();
@@ -440,41 +510,39 @@ Dark Purple: #33135c
 */
 
 function mouseClicked() {
-  if (mouseX > 0 && mouseX < 100 && mouseY > 220 && mouseY < 300) {
-    isRunning = true;
-  }
+  startButton.click();
   if (!isToneStarted) {
     Tone.start();
     isToneStarted = true;
   }
   // if (!isRunning) {
   boards.forEach((board) => {
-    board.fields.forEach((field) => {
-      field.click();
+    board.cells.forEach((cell) => {
+      cell.click();
     });
   });
   // }
 }
 
 function mouseDragged() {
-  let fieldHit = false;
+  let cellHit = false;
   boards.forEach((board) => {
-    board.fields.forEach((field) => {
-      let hit = field.click();
+    board.cells.forEach((cell) => {
+      let hit = cell.click();
       if (hit) {
-        fieldHit = hit;
+        cellHit = hit;
       }
     });
   });
-
-  if (!fieldHit) {
+  /*
+  if (!cellHit) {
     boards.forEach((board) => {
       if (board.hitTest(mouseX, mouseY)) {
         board.x += movedX;
         board.y += movedY;
       }
     });
-  }
+  }*/
   return false;
 }
 
