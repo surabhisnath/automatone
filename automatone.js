@@ -7,11 +7,11 @@ let bassSynth;
 let recorder;
 
 function setup() {
-  //recorder = new Tone.Recorder({ mimeType: "audio/mp4" });
+  // recorder = new Tone.Recorder({ mimeType: "audio/mp4" });
   recorder = new Tone.Recorder();
   // mimics the autoplay policy
   // getAudioContext().suspend();
-  const vol = new Tone.Volume(-12).toDestination();
+  const vol = new Tone.Volume(-12).connect(recorder).toDestination();
   // const chorus = new Tone.Chorus(4, 2.5, 0.5).connect(vol).start();
   const filter = new Tone.Filter({
     frequency: 1100,
@@ -61,9 +61,7 @@ function setup() {
     },
     portamento: 0.05,
   };
-  synth = new Tone.PolySynth(Tone.Synth, pianoOptions)
-    .connect(filter)
-    .connect(recorder);
+  synth = new Tone.PolySynth(Tone.Synth, pianoOptions).connect(filter);
   synth.maxPolyphony = 100;
   // polySynth = new p5.PolySynth(p5.MonoSynth, 50);
   chorusSynth = new Tone.PolySynth(Tone.Synth).connect(chorusFilter);
@@ -122,9 +120,7 @@ function setup() {
   let distortion = new Tone.Distortion(0.8).connect(bass);
   distortion.wet = 0.2;
   //DuoSynth, single chord
-  bassSynth = new Tone.PolySynth(Tone.Synth, bassOptions2)
-    .connect(vol)
-    .connect(recorder);
+  bassSynth = new Tone.PolySynth(Tone.Synth, bassOptions2).connect(vol);
   bassSynth.maxPolyphony = 16;
 
   createCanvas(innerWidth, innerHeight);
