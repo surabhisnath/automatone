@@ -4,8 +4,11 @@ let chorusSynth;
 let sineSynth;
 let sawSynth;
 let bassSynth;
+let recorder;
 
 function setup() {
+  //recorder = new Tone.Recorder({ mimeType: "audio/mp4" });
+  recorder = new Tone.Recorder();
   // mimics the autoplay policy
   // getAudioContext().suspend();
   const vol = new Tone.Volume(-12).toDestination();
@@ -58,7 +61,9 @@ function setup() {
     },
     portamento: 0.05,
   };
-  synth = new Tone.PolySynth(Tone.Synth, pianoOptions).connect(filter);
+  synth = new Tone.PolySynth(Tone.Synth, pianoOptions)
+    .connect(filter)
+    .connect(recorder);
   synth.maxPolyphony = 100;
   // polySynth = new p5.PolySynth(p5.MonoSynth, 50);
   chorusSynth = new Tone.PolySynth(Tone.Synth).connect(chorusFilter);
@@ -117,11 +122,13 @@ function setup() {
   let distortion = new Tone.Distortion(0.8).connect(bass);
   distortion.wet = 0.2;
   //DuoSynth, single chord
-  bassSynth = new Tone.PolySynth(Tone.Synth, bassOptions2).connect(vol);
+  bassSynth = new Tone.PolySynth(Tone.Synth, bassOptions2)
+    .connect(vol)
+    .connect(recorder);
   bassSynth.maxPolyphony = 16;
 
   createCanvas(innerWidth, innerHeight);
-  frameRate(60);
+  frameRate(30);
   background(0, 0, 0);
 
   setupBoards();
@@ -180,7 +187,7 @@ class Board {
           this,
           tone + (octave + this.octaveOffset),
           state,
-          this.lifecycle / 60,
+          this.lifecycle / 30,
           this.synth
         );
         this.board[i].push(cell);
@@ -368,6 +375,7 @@ class Button {
   draw() {
     push();
     translate(this.x, this.y);
+    noStroke();
     textAlign(CENTER);
     textSize(18);
     fill("#33135c");
@@ -403,12 +411,35 @@ let toneXX = ["C", "F", "G"];
 let tone = ["B#", "D", "F", "G", "A"];
 // let fields = [];
 const size = 20;
+let screenshotCounter = 1;
+
+function takeScreenshot() {
+  setTimeout(() => {
+    isRunning = false;
+    saveCanvas(`AutomaTone_${screenshotCounter}.png`);
+    screenshotCounter++;
+  }, 1000);
+}
 
 let boards = [];
 const startButton = new Button(0, 0, "Start", () => {
   isRunning = !isRunning;
   if (isRunning) {
     startButton.title = "Stop";
+    // takeScreenshot();
+    /*recorder.start();
+    setTimeout(async () => {
+      // the recorded audio is returned as a blob
+      const recording = await recorder.stop();
+      // download the recording by creating an anchor element and blob url
+      const url = URL.createObjectURL(recording);
+      const anchor = document.createElement("a");
+      anchor.download = "recording.webm";
+      anchor.href = url;
+      anchor.click();
+
+      isRunning = false;
+    }, 16000);*/
   } else {
     startButton.title = "Start";
   }
