@@ -551,6 +551,10 @@ function mouseClicked() {
   // }
 }
 
+function touchEnded() {
+  mouseClicked();
+}
+
 function mouseDragged() {
   let cellHit = false;
   boards.forEach((board) => {
