@@ -127,6 +127,8 @@ function setup() {
   frameRate(30);
   background(0, 0, 0);
 
+  size = width / (6 * 8);
+
   setupBoards();
 }
 
@@ -406,7 +408,7 @@ let toneZ = ["F", "G", "A", "C", "D"];
 let toneXX = ["C", "F", "G"];
 let tone = ["B#", "D", "F", "G", "A"];
 // let fields = [];
-const size = 20;
+let size = 30;
 let screenshotCounter = 1;
 
 function takeScreenshot() {
