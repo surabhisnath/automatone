@@ -299,7 +299,6 @@ function centerBoards() {
   for (let index in boards) {
     let board = boards[index];
     board.x = (width - boardSize * num_boards - size * (num_boards - 1)) / 2 + index * (boardSize + size);
-    // board.y = (height - boardSize) / 2;
   }
 }
 
