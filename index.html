@@ -1,14 +1,64 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AUTOMATONE ♫</title>
-    <script src="p5.min.js" defer></script>
-    <script src="Tone.js" defer></script>
-    <script src="automatone.js" defer></script>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body></body>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="p5.min.js" defer></script>
+  <script src="Tone.js" defer></script>
+  <link rel="stylesheet" href="style.css" /> 
+</head>
+<body>
+  <div id="controls">
+    <label for="boardsize" style="font-family: Arial, Helvetica, sans-serif; font-size: medium;">Grid size:</label>
+    <input type="number" id="boardsize" name="boardsize" value="9" min="5" max="15" step="2" style="width: 30px; text-align: center; ">
+    &nbsp;&nbsp;
+
+    <label for="num_boards" style="font-family: Arial, Helvetica, sans-serif; font-size: medium;">Number of Boards:</label>
+    <input type="number" id="num_boards" name="num_boards" value="3" min="1" max="5" style="width: 30px; text-align: center;">
+    &nbsp;&nbsp;
+
+    <label for="rule" style="font-family: Arial, Helvetica, sans-serif; font-size: medium;">Rule:</label>
+    <input type="number" id="rule" name="rule" value="451" style="width: 60px; text-align: left;">
+    &nbsp;&nbsp;
+
+    <label for="tot" style="font-family: Arial, Helvetica, sans-serif; font-size: medium;">Totalistic:</label>
+    <select id="tot" name="tot">
+      <option value="0">Otot</option>
+      <option value="1">Tot</option>
+    </select>
+    &nbsp;&nbsp;
+
+    <label for="neigh" style="font-family: Arial, Helvetica, sans-serif; font-size: medium;">Neighborhood:</label>
+    <select id="neigh" name="neigh">
+      <option value="5">5-cell</option>
+      <option value="9">9-cell</option>
+    </select>
+    &nbsp;&nbsp;
+
+    <label for="tone" style="font-family: Arial, Helvetica, sans-serif; font-size: medium;">Tone:</label>
+    <select id="tone" name="tone">
+      <option value="C,D,E,G,A">Bhoopali</option>
+      <option value="B,D,E,F#,G,A,B,C">Yaman</option>
+      <option value="C,C#,E,F,G,G#,B">Bhairav</option>
+      <option value="C,D,D#,F,E,A,A#">Kaafi</option>
+      <option value="C,D,F,G,A">Durga</option>
+      <option value="C,D#,F,G#,A#">Malkauns</option>
+    </select>
+    &nbsp;&nbsp;
+
+    <label for="ic" style="font-family: Arial, Helvetica, sans-serif; font-size: medium;">Initial Condition:</label>
+    <select id="ic" name="ic">
+      <option value="1">Single Centered</option>
+      <option value="2">Random</option>
+    </select>
+    &nbsp;&nbsp;
+    <br><br>
+
+    <button id="setButton" onclick="resetBoards()">Set</button>
+    &nbsp;&nbsp;
+    <button id="startButton" onclick="toggleStart()">Start</button>
+  </div>
+  <script src="automatone.js"></script>
+</body>
 </html>
